@@ -1,0 +1,29 @@
+# Sample configuration for aegis-agent-java
+samplingIntervalMs: 1000
+mode: DETECT
+baselineMinSamples: 300
+output: STDOUT
+
+# Linux folder to watch recursively for filesystem storm behavior
+watchRoot: /tmp/aegis-watch
+
+# Path for persisted baseline model JSON
+baselinePath: baseline.json
+
+# Sliding window used to compute fs event rates
+stormWindowSeconds: 3
+
+# Default z-score threshold for storm flags
+zScoreThreshold: 3.0
+
+# Absolute rate thresholds (per second)
+thresholds:
+  filesModifiedPerSec: 200.0
+  filesDeletedPerSec: 100.0
+  approxRenamesPerSec: 80.0
+  diskWriteBytesPerSec: 52428800.0
+
+# Classifier verdict thresholds
+scoreThresholds:
+  suspicious: 0.55
+  ransomware: 0.85
