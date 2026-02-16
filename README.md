@@ -2,7 +2,9 @@
 
 Linux-only Java 17 Maven agent for ransomware-behavior detection.
 
-It watches a filesystem root recursively, scans `/proc` for top write-heavy processes, builds a baseline, computes anomaly flags, classifies ransomware likelihood, and prints JSON lines to stdout.
+It watches a filesystem root recursively, scans `/proc` for top write-heavy processes, builds a baseline, computes anomaly flags, classifies ransomware likelihood, and emits one telemetry JSON event per tick.
+
+Each telemetry event is always printed to stdout. It is also POSTed to a backend when `postTelemetry=true` and `backendUrl` is configured.
 
 ## Build (Kali/Ubuntu)
 
@@ -12,11 +14,57 @@ sudo apt install -y openjdk-17-jdk maven
 mvn -DskipTests package
 ```
 
-## Run
+## Run Agent
 
 ```bash
 java -jar target/aegis-agent.jar --config config.yml
 ```
+
+## Backend + Agent Together (Method A)
+
+Example config values:
+
+```yaml
+backendUrl: "http://localhost:3000"
+aegisToken: "dev-local-token"
+postTelemetry: true
+postTimeoutMs: 1500
+postQueueMax: 500
+agentId: "local-vm-01"
+```
+
+Token override (env wins over config):
+
+```bash
+export AEGIS_TOKEN="dev-local-token"
+```
+
+Run backend on Kali (port 3000):
+
+```bash
+npm run dev
+```
+
+Run agent:
+
+```bash
+java -jar target/aegis-agent.jar --config config.yml
+```
+
+Verify backend receives events:
+
+- `GET /api/events`
+- `GET /api/stream` (SSE)
+
+## POST Contract
+
+For every telemetry event:
+
+- `POST {backendUrl}/api/telemetry`
+- Headers:
+  - `Content-Type: application/json`
+  - `X-Aegis-Token: <token>`
+- Body: exactly the same JSON object printed to stdout
 
 ## Config
 
@@ -26,6 +74,12 @@ Edit `config.yml`:
 - `baselinePath`: baseline persistence JSON file path
 - `stormWindowSeconds`: sliding window for fs per-second rates
 - `zScoreThreshold`: z-score threshold for storm flags
+- `backendUrl`: backend base URL (no trailing path required)
+- `aegisToken`: shared secret token (or set `AEGIS_TOKEN` env)
+- `postTelemetry`: enable/disable backend posting
+- `postTimeoutMs`: HTTP connect/read timeout in milliseconds
+- `postQueueMax`: bounded in-memory queue size for outgoing events
+- `agentId`: stable agent identifier in telemetry output
 - `thresholds.*`: absolute per-second thresholds
 - `scoreThresholds.*`: classifier verdict thresholds
 
@@ -37,6 +91,8 @@ Each line is JSON with this shape:
 {
   "type": "telemetry",
   "timestamp": "...",
+  "agentId": "local-vm-01",
+  "host": "kali-host",
   "baselineReady": true,
   "fs": {
     "modifiedPerSec": 0.0,

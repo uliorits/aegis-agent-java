@@ -47,7 +47,7 @@ public class AgentLoop {
         this.baselineModel = new BaselineModel(config.getBaselineMinSamples(), config.getBaselinePath());
         this.anomalyEngine = new AnomalyEngine(config);
         this.ransomwareClassifier = new RansomwareClassifier(config.getScoreThresholds());
-        this.comms = new Comms();
+        this.comms = new Comms(config);
         this.procScanner = new ProcScanner();
 
         this.fsEventCounters = new FsEventCounters();
@@ -201,6 +201,12 @@ public class AgentLoop {
             baselineModel.close();
         } catch (Throwable ignored) {
             // Ignore baseline save failures at shutdown.
+        }
+
+        try {
+            comms.close();
+        } catch (Throwable ignored) {
+            // Ignore comms shutdown failures.
         }
     }
 

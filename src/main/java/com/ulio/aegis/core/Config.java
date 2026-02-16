@@ -118,6 +118,13 @@ public class Config {
     private int stormWindowSeconds = 3;
     private double zScoreThreshold = 3.0;
 
+    private String backendUrl = "";
+    private String aegisToken = "";
+    private boolean postTelemetry = true;
+    private int postTimeoutMs = 1500;
+    private int postQueueMax = 500;
+    private String agentId = "local-vm-01";
+
     private Thresholds thresholds = new Thresholds();
     private ScoreThresholds scoreThresholds = new ScoreThresholds();
 
@@ -125,12 +132,14 @@ public class Config {
         Config defaults = new Config();
         if (path == null || !Files.exists(path)) {
             System.err.println("Config file not found, using defaults: " + path);
+            defaults.applyDefaults();
             return defaults;
         }
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         Config loaded = mapper.readValue(path.toFile(), Config.class);
         if (loaded == null) {
+            defaults.applyDefaults();
             return defaults;
         }
 
@@ -165,6 +174,19 @@ public class Config {
             zScoreThreshold = 3.0;
         }
 
+        backendUrl = backendUrl == null ? "" : backendUrl.trim();
+        aegisToken = resolveAegisToken(aegisToken);
+
+        if (postTimeoutMs <= 0) {
+            postTimeoutMs = 1500;
+        }
+        if (postQueueMax <= 0) {
+            postQueueMax = 500;
+        }
+        if (agentId == null || agentId.isBlank()) {
+            agentId = "local-vm-01";
+        }
+
         if (thresholds == null) {
             thresholds = new Thresholds();
         }
@@ -174,6 +196,15 @@ public class Config {
             scoreThresholds = new ScoreThresholds();
         }
         scoreThresholds.applyDefaults();
+    }
+
+    private String resolveAegisToken(String configuredToken) {
+        String envToken = System.getenv("AEGIS_TOKEN");
+        if (envToken != null) {
+            return envToken.trim();
+        }
+
+        return configuredToken == null ? "" : configuredToken.trim();
     }
 
     public long getSamplingIntervalMs() {
@@ -238,6 +269,54 @@ public class Config {
 
     public void setZScoreThreshold(double zScoreThreshold) {
         this.zScoreThreshold = zScoreThreshold;
+    }
+
+    public String getBackendUrl() {
+        return backendUrl;
+    }
+
+    public void setBackendUrl(String backendUrl) {
+        this.backendUrl = backendUrl;
+    }
+
+    public String getAegisToken() {
+        return aegisToken;
+    }
+
+    public void setAegisToken(String aegisToken) {
+        this.aegisToken = aegisToken;
+    }
+
+    public boolean isPostTelemetry() {
+        return postTelemetry;
+    }
+
+    public void setPostTelemetry(boolean postTelemetry) {
+        this.postTelemetry = postTelemetry;
+    }
+
+    public int getPostTimeoutMs() {
+        return postTimeoutMs;
+    }
+
+    public void setPostTimeoutMs(int postTimeoutMs) {
+        this.postTimeoutMs = postTimeoutMs;
+    }
+
+    public int getPostQueueMax() {
+        return postQueueMax;
+    }
+
+    public void setPostQueueMax(int postQueueMax) {
+        this.postQueueMax = postQueueMax;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 
     public Thresholds getThresholds() {

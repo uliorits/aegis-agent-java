@@ -16,6 +16,14 @@ stormWindowSeconds: 3
 # Default z-score threshold for storm flags
 zScoreThreshold: 3.0
 
+# Telemetry POST settings (Method A)
+backendUrl: "http://localhost:3000"
+aegisToken: "dev-local-token"
+postTelemetry: true
+postTimeoutMs: 1500
+postQueueMax: 500
+agentId: "local-vm-01"
+
 # Absolute rate thresholds (per second)
 thresholds:
   filesModifiedPerSec: 200.0
